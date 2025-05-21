@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-def plot_date_price(dates, prices, title, xlabel, ylabel):
+def plot_date_price(dates, prices, title="BTC Price Over Time", xlabel="Date", ylabel="BTC Price"):
 
     fig, ax = plt.subplots(figsize=(20, 10))
     ax.plot(dates, prices, color='orange', linewidth=1, label='BTC Price')
@@ -45,7 +45,7 @@ def plot_date_price(dates, prices, title, xlabel, ylabel):
                  linestyle='-', color='darkred', alpha=0.5,
                  label=f'{i} STD')
 
-    for i in range(1, 3):
+    for i in range(0, 3):
         plt.plot(dates, np.exp(model.predict(dates_num) + i * std_dev),
                  linestyle='-', color='green', alpha=0.5,
                  label=f'{i} STD')
@@ -54,7 +54,6 @@ def plot_date_price(dates, prices, title, xlabel, ylabel):
     # Use .iloc to access the last element by position, and remove timezone information
     future_dates = pd.date_range(start=dates.iloc[-1].tz_localize(None), end=pd.to_datetime('2026-04-30').tz_localize(None), freq='D')
     future_dates_num = mdates.date2num(future_dates)
-
     future_dates_num = future_dates_num.reshape(-1, 1)
 
     future_predicted_prices = np.exp(model.predict(future_dates_num))
@@ -68,7 +67,7 @@ def plot_date_price(dates, prices, title, xlabel, ylabel):
     # Add vertical lines for specific dates
     important_dates = ['2025-10-20', '2025-12-20', '2026-03-20']
     for date in important_dates:
-        ax.axvline(pd.to_datetime(date), color='darkblue', linestyle='-', linewidth=0.8)
+        ax.axvline(pd.to_datetime(date), color='red', linestyle='-', linewidth=1.5)
 
     # Format x-axis to show year and month
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
@@ -76,14 +75,26 @@ def plot_date_price(dates, prices, title, xlabel, ylabel):
     # Set minor locator to show months
     ax.xaxis.set_minor_locator(mdates.MonthLocator())  # Place a tick for each month
 
+    # Add horizontal line at 150,000 for important level
+    ax.axhline(y=150000, color='black', linestyle='--', label='150,000 Price Level')
+
     plt.legend()
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
     ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-    plt.savefig("btc_price_log_regression_forecast.png", dpi=300)
+    plt.savefig("btc_price_2022_log_regression_std_future.png", dpi=300)
     plt.show()
 
 df = pd.read_csv(r'c:\Users\Julia\_PW_PYTH_Proj\btc_regression\content\btc-usd-max.csv', parse_dates=['snapped_at'])
-dates = df['snapped_at']
-prices = df['price']
 
-plot_date_price(dates, prices, title="BTC Price Over Time", xlabel="Date", ylabel="BTC Price")
+# Filter data from November 1, 2022, onwards
+# Make start_date timezone-aware by setting it to UTC
+# or the same timezone as your 'snapped_at' column.
+start_date = pd.to_datetime('2022-11-01').tz_localize('UTC')
+filtered_df = df[df['snapped_at'] >= start_date]
+
+# Extract dates and prices from the filtered data
+dates = filtered_df['snapped_at']
+prices = filtered_df['price']
+
+# Call the plotting function with the filtered data
+plot_date_price(dates, prices, title="BTC Price Over Time (from Nov 2022)", xlabel="Date", ylabel="BTC Price")
